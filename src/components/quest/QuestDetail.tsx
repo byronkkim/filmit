@@ -131,20 +131,26 @@ export function QuestDetail({ quest, pledgeCount, currentUserId, userInfo, isCre
         </div>
       )}
 
-      {/* 추가 조건 */}
+      {/* 서브퀘스트 (⭐ 보너스 별) */}
       {subQuests.length > 0 && (
         <div className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-foreground">추가 조건</h2>
+          <h2 className="mb-3 text-lg font-semibold text-foreground">보너스 별 ⭐</h2>
+          <p className="mb-3 text-xs text-muted">달성하면 크리에이터 프로필에 별이 추가됩니다. 후원자 투표로 결정!</p>
           <div className="space-y-2">
             {subQuests.map((sq) => (
               <div
                 key={sq.id}
                 className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3"
               >
-                <span className="text-sm text-foreground">{sq.description}</span>
-                {sq.amount > 0 && (
-                  <span className="text-sm font-medium text-primary-text">
-                    +{sq.amount.toLocaleString()}원
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm ${sq.status === 'achieved' ? 'text-yellow-500' : 'text-muted'}`}>
+                    {sq.status === 'achieved' ? '⭐' : '☆'}
+                  </span>
+                  <span className="text-sm text-foreground">{sq.description}</span>
+                </div>
+                {(sq.star_votes_yes > 0 || sq.star_votes_no > 0) && (
+                  <span className="text-xs text-muted">
+                    👍 {sq.star_votes_yes} / 👎 {sq.star_votes_no}
                   </span>
                 )}
               </div>

@@ -103,16 +103,24 @@ export interface SubQuest {
   quest_id: string;
   description: string;
   is_main: boolean;
-  amount: number;
   status: SubQuestStatus;
+  star_votes_yes: number;
+  star_votes_no: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface SubQuestVote {
+  id: string;
+  sub_quest_id: string;
+  user_id: string;
+  vote: boolean; // true = 달성, false = 미달성
+  created_at: string;
 }
 
 export interface Pledge {
   id: string;
   quest_id: string;
-  sub_quest_id: string | null;
   user_id: string;
   amount: number;
   platform_fee: number;

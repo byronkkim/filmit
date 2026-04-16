@@ -174,7 +174,7 @@ export function QuestForm() {
               </div>
             ))}
           {subQuests.filter((s) => !s.is_main).length === 0 && (
-            <p className="text-xs text-muted">추가 조건을 등록하면 달성 시 추가 보상을 받을 수 있습니다</p>
+            <p className="text-xs text-muted">보너스 조건을 달성하면 크리에이터에게 ⭐ 별이 추가됩니다</p>
           )}
         </div>
       </div>
