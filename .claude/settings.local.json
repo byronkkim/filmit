@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)",
+      "Bash(npx supabase:*)",
+      "Bash(curl -s http://localhost:3000/quests/new)",
+      "WebFetch(domain:docs.tosspayments.com)"
+    ]
+  }
+}

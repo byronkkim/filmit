@@ -1,0 +1,244 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { Quest, SubQuest, Creator } from '@/types/database';
+import { PledgeForm } from '@/components/payment/PledgeForm';
+
+interface QuestDetailProps {
+  quest: Quest & {
+    sub_quests: SubQuest[];
+    creator: Creator | null;
+  };
+  pledgeCount: number;
+  currentUserId: string | null;
+  userInfo?: { id: string; email: string; name: string } | null;
+  isCreator?: boolean;
+}
+
+export function QuestDetail({ quest, pledgeCount, currentUserId, userInfo, isCreator }: QuestDetailProps) {
+  const router = useRouter();
+  const [showPledge, setShowPledge] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+
+  const handleAcceptQuest = async () => {
+    if (!isCreator) {
+      router.push('/creator');
+      return;
+    }
+
+    setAccepting(true);
+    setAcceptError(null);
+
+    try {
+      const res = await fetch(`/api/quests/${quest.id}/accept`, { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAcceptError(data.error ?? '퀘스트 수락에 실패했습니다.');
+        setAccepting(false);
+        return;
+      }
+
+      router.push('/creator/quests');
+      router.refresh();
+    } catch {
+      setAcceptError('예기치 않은 오류가 발생했습니다.');
+      setAccepting(false);
+    }
+  };
+  const mainQuests = quest.sub_quests?.filter((sq) => sq.is_main) ?? [];
+  const subQuests = quest.sub_quests?.filter((sq) => !sq.is_main) ?? [];
+
+  const statusLabel: Record<string, string> = {
+    open: '모집 중',
+    in_progress: '제작 중',
+    reviewing: '검토 중',
+    completed: '완료',
+    cancelled: '취소됨',
+  };
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      {/* 뒤로가기 */}
+      <Link
+        href="/quests"
+        className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
+      >
+        ← 퀘스트 목록
+      </Link>
+
+      {/* 헤더 */}
+      <div className="mb-8">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-text">
+            {statusLabel[quest.status] ?? quest.status}
+          </span>
+          {quest.is_competitive && (
+            <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-text">
+              경쟁 방식
+            </span>
+          )}
+        </div>
+
+        <h1 className="mb-2 text-2xl font-bold text-foreground">{quest.title}</h1>
+        <p className="text-muted">{quest.description}</p>
+      </div>
+
+      {/* 보상 정보 카드 */}
+      <div className="mb-8 rounded-xl border border-border bg-muted-soft p-6">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-sm text-muted">크리에이터 보상</p>
+            <p className="mt-1 text-2xl font-bold text-primary-text">
+              {quest.creator_reward_amount.toLocaleString()}원
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted">총 후원액</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {quest.total_pledged_amount.toLocaleString()}원
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted">후원자</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {pledgeCount}명
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 필수 조건 */}
+      {mainQuests.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">필수 조건</h2>
+          <div className="space-y-2">
+            {mainQuests.map((sq) => (
+              <div
+                key={sq.id}
+                className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs text-white">
+                  !
+                </span>
+                <span className="text-sm text-foreground">{sq.description}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 추가 조건 */}
+      {subQuests.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">추가 조건</h2>
+          <div className="space-y-2">
+            {subQuests.map((sq) => (
+              <div
+                key={sq.id}
+                className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3"
+              >
+                <span className="text-sm text-foreground">{sq.description}</span>
+                {sq.amount > 0 && (
+                  <span className="text-sm font-medium text-primary-text">
+                    +{sq.amount.toLocaleString()}원
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 크리에이터 정보 */}
+      {quest.creator && (
+        <div className="mb-8 rounded-xl border border-border p-5">
+          <h2 className="mb-3 text-lg font-semibold text-foreground">담당 크리에이터</h2>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-sm font-bold text-primary-text">
+              {quest.creator.channel_name?.[0] ?? 'C'}
+            </div>
+            <div>
+              <p className="font-medium text-foreground">
+                {quest.creator.channel_name ?? '크리에이터'}
+              </p>
+              <p className="text-xs text-muted">
+                구독자 {quest.creator.subscriber_count.toLocaleString()}명 · {quest.creator.grade}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 에러 메시지 */}
+      {acceptError && (
+        <div className="mb-4 rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-text">
+          {acceptError}
+        </div>
+      )}
+
+      {/* 후원 폼 */}
+      {quest.status === 'open' && currentUserId && userInfo && (
+        <>
+          {showPledge ? (
+            <div className="mb-8 rounded-2xl bg-surface p-6 ring-1 ring-border">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">후원하기</h2>
+                <button
+                  onClick={() => setShowPledge(false)}
+                  className="text-sm text-muted hover:text-foreground"
+                >
+                  닫기
+                </button>
+              </div>
+              <PledgeForm
+                questId={quest.id}
+                questTitle={quest.title}
+                userId={userInfo.id}
+                userEmail={userInfo.email}
+                userName={userInfo.name}
+              />
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPledge(true)}
+                className="flex-1 rounded-xl bg-primary py-3 text-sm font-medium text-white hover:bg-primary-hover"
+              >
+                후원하기
+              </button>
+              <button
+                onClick={handleAcceptQuest}
+                disabled={accepting}
+                className="flex-1 rounded-xl border border-border bg-surface py-3 text-sm font-medium text-foreground hover:bg-muted-soft disabled:opacity-50"
+              >
+                {accepting ? '수락 중...' : isCreator ? '크리에이터로 도전하기' : '크리에이터 등록 후 도전하기'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 진행 중인 퀘스트 — 현재 크리에이터 표시 */}
+      {quest.status === 'in_progress' && currentUserId && (
+        <div className="rounded-xl bg-primary-soft p-4 text-center">
+          <p className="text-sm font-medium text-primary-text">
+            이 퀘스트는 현재 제작이 진행 중입니다
+          </p>
+        </div>
+      )}
+
+      {!currentUserId && quest.status === 'open' && (
+        <Link
+          href="/login"
+          className="block rounded-xl bg-primary py-3 text-center text-sm font-medium text-white hover:bg-primary-hover"
+        >
+          로그인하고 후원하기
+        </Link>
+      )}
+    </div>
+  );
+}
