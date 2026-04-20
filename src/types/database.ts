@@ -69,6 +69,8 @@ export interface Creator {
   account_number: string | null;
   account_holder: string | null;
   account_verified: boolean;
+  abandoned_quests: number;
+  suspended_until: string | null;
   kyc_type: KycType | null;
   kyc_encrypted: string | null;
   kyc_iv: string | null;
@@ -141,6 +143,7 @@ export interface Video {
   creator_id: string;
   video_url: string;
   youtube_video_id: string | null;
+  youtube_published_at: string | null;
   duration_seconds: number | null;
   ai_verification_score: number | null;
   ai_verification_result: Record<string, unknown> | null;

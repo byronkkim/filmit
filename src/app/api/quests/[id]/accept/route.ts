@@ -20,12 +20,21 @@ export async function POST(
   // 크리에이터 프로필 확인
   const { data: creator } = await supabase
     .from('creators')
-    .select('id')
+    .select('id, suspended_until')
     .eq('user_id', user.id)
     .single();
 
   if (!creator) {
     return NextResponse.json({ error: '크리에이터 등록이 필요합니다.' }, { status: 403 });
+  }
+
+  // 제재 중인 크리에이터는 수락 불가
+  if (creator.suspended_until && new Date(creator.suspended_until) > new Date()) {
+    const until = new Date(creator.suspended_until).toLocaleDateString('ko-KR');
+    return NextResponse.json(
+      { error: `${until}까지 새 퀘스트를 수락할 수 없습니다. (데드라인 초과 이력)` },
+      { status: 403 }
+    );
   }
 
   // 퀘스트 조회
@@ -47,13 +56,18 @@ export async function POST(
     return NextResponse.json({ error: '이미 다른 크리에이터가 수락한 퀘스트입니다.' }, { status: 409 });
   }
 
-  // 퀘스트 수락: creator_id 설정 + status 변경
+  // 데드라인: 수락 시점으로부터 14일 후
+  const now = new Date();
+  const deadline = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  // 퀘스트 수락: creator_id 설정 + status 변경 + 데드라인 자동 설정
   const { data: updated, error: updateError } = await supabase
     .from('quests')
     .update({
       creator_id: creator.id,
       status: 'in_progress',
-      accepted_at: new Date().toISOString(),
+      accepted_at: now.toISOString(),
+      deadline_at: deadline.toISOString(),
     })
     .eq('id', questId)
     .eq('status', 'open')  // 낙관적 잠금

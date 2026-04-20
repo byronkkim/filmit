@@ -131,6 +131,111 @@ export async function fetchChannelInfo(channelUrl: string): Promise<YouTubeChann
   };
 }
 
+export interface YouTubeVideoInfo {
+  video_id: string;
+  title: string;
+  description: string;
+  channel_id: string;
+  channel_title: string;
+  published_at: string;      // ISO 8601
+  duration_seconds: number;
+  thumbnail_url: string;
+  has_captions: boolean;
+}
+
+/**
+ * YouTube URL에서 video ID 추출
+ * 지원: https://youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, https://youtube.com/shorts/VIDEO_ID
+ */
+export function parseVideoUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url.trim());
+    if (!parsed.hostname.includes('youtube.com') && !parsed.hostname.includes('youtu.be')) {
+      return null;
+    }
+
+    // youtu.be/VIDEO_ID
+    if (parsed.hostname.includes('youtu.be')) {
+      const id = parsed.pathname.slice(1);
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+    }
+
+    // youtube.com/watch?v=VIDEO_ID
+    const v = parsed.searchParams.get('v');
+    if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) {
+      return v;
+    }
+
+    // youtube.com/shorts/VIDEO_ID or /embed/VIDEO_ID
+    const pathMatch = parsed.pathname.match(/^\/(?:shorts|embed|v)\/([a-zA-Z0-9_-]{11})/);
+    if (pathMatch) {
+      return pathMatch[1];
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ISO 8601 duration (PT1H2M3S) → 초
+ */
+function parseDuration(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const [, h, m, s] = match;
+  return (parseInt(h ?? '0') * 3600) + (parseInt(m ?? '0') * 60) + parseInt(s ?? '0');
+}
+
+/**
+ * YouTube 영상 정보 조회
+ */
+export async function fetchVideoInfo(videoUrl: string): Promise<YouTubeVideoInfo> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    throw new Error('YOUTUBE_API_KEY 환경변수가 설정되지 않았습니다.');
+  }
+
+  const videoId = parseVideoUrl(videoUrl);
+  if (!videoId) {
+    throw new Error('유효하지 않은 YouTube 영상 URL입니다.');
+  }
+
+  const params = new URLSearchParams({
+    part: 'snippet,contentDetails',
+    id: videoId,
+    key: apiKey,
+  });
+
+  const res = await fetch(`${YOUTUBE_API_BASE}/videos?${params}`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message ?? 'YouTube API 요청 실패');
+  }
+
+  const data = await res.json();
+  if (!data.items || data.items.length === 0) {
+    throw new Error('영상을 찾을 수 없습니다. 비공개이거나 삭제된 영상일 수 있습니다.');
+  }
+
+  const video = data.items[0];
+  const snippet = video.snippet;
+  const contentDetails = video.contentDetails;
+
+  return {
+    video_id: videoId,
+    title: snippet.title,
+    description: snippet.description ?? '',
+    channel_id: snippet.channelId,
+    channel_title: snippet.channelTitle,
+    published_at: snippet.publishedAt,
+    duration_seconds: parseDuration(contentDetails.duration),
+    thumbnail_url: snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url ?? '',
+    has_captions: contentDetails.caption === 'true',
+  };
+}
+
 /**
  * @handle → channel ID 변환
  * YouTube Data API v3의 channels?forHandle= 사용
