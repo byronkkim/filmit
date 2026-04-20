@@ -3,6 +3,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface AiSubCheck {
+  id: string;
+  achieved: boolean;
+  evidence: string;
+}
+
+interface AiResult {
+  main_reason?: string;
+  main_highlights?: string[];
+  sub_quest_checks?: AiSubCheck[];
+  error?: string;
+}
+
 interface VoteSectionProps {
   videoId: string;
   videoUrl: string;
@@ -17,6 +30,8 @@ interface VoteSectionProps {
     star_votes_yes: number;
     star_votes_no: number;
   }>;
+  aiScore?: number | null;
+  aiResult?: Record<string, unknown> | null;
 }
 
 interface VoteStatus {
@@ -32,7 +47,12 @@ export function VoteSection({
   totalBackers,
   isPledger,
   subQuests,
+  aiScore,
+  aiResult,
 }: VoteSectionProps) {
+  const ai = (aiResult ?? {}) as AiResult;
+  const aiSubChecks = new Map<string, AiSubCheck>();
+  (ai.sub_quest_checks ?? []).forEach(c => aiSubChecks.set(c.id, c));
   const router = useRouter();
   const [mainVote, setMainVote] = useState<VoteStatus>({ yes: 0, no: 0, my_vote: null });
   const [subVotes, setSubVotes] = useState<Record<string, boolean | null>>({});
@@ -126,6 +146,54 @@ export function VoteSection({
 
   return (
     <div className="space-y-6">
+      {/* AI 판정 결과 */}
+      {aiScore !== null && aiScore !== undefined && (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">🤖 AI 판정 결과</h2>
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+              aiScore >= 70 ? 'bg-success/10 text-success' :
+              aiScore >= 40 ? 'bg-primary-soft text-primary-text' :
+              'bg-accent-soft text-accent-text'
+            }`}>
+              {aiScore}점 / 100점
+            </span>
+          </div>
+
+          {ai.main_reason && (
+            <p className="mb-3 text-sm text-foreground">{ai.main_reason}</p>
+          )}
+
+          {ai.main_highlights && ai.main_highlights.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-2 text-xs font-medium text-muted">주요 장면</p>
+              <ul className="space-y-1">
+                {ai.main_highlights.map((h, i) => (
+                  <li key={i} className="text-xs text-muted">
+                    • {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {ai.error && (
+            <p className="text-xs text-accent-text">⚠️ AI 분석 중 오류: {ai.error}</p>
+          )}
+
+          <p className="mt-3 text-xs text-muted">
+            ※ AI 판정은 참고용이며, 최종 결정은 후원자 투표 + AI를 종합합니다.
+          </p>
+        </div>
+      )}
+
+      {aiScore === null && (
+        <div className="rounded-2xl border border-border bg-surface p-6 text-center">
+          <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <p className="text-sm text-muted">AI가 영상을 분석하고 있습니다...</p>
+        </div>
+      )}
+
       {/* 메인 영상 투표 */}
       <div className="rounded-2xl bg-surface p-6 ring-1 ring-border">
         <div className="mb-3 flex items-center justify-between">
@@ -227,9 +295,20 @@ export function VoteSection({
             {subQuestsOnly.map(sq => {
               const myVote = subVotes[sq.id];
               const totalVotes = sq.star_votes_yes + sq.star_votes_no;
+              const aiCheck = aiSubChecks.get(sq.id);
               return (
                 <div key={sq.id} className="rounded-xl border border-border bg-background p-4">
-                  <p className="mb-3 text-sm text-foreground">{sq.description}</p>
+                  <p className="mb-2 text-sm text-foreground">{sq.description}</p>
+
+                  {aiCheck && (
+                    <div className={`mb-3 rounded-lg px-3 py-2 text-xs ${
+                      aiCheck.achieved
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted-soft/50 text-muted'
+                    }`}>
+                      🤖 {aiCheck.achieved ? '달성 판정' : '미달성 판정'}: {aiCheck.evidence}
+                    </div>
+                  )}
                   {isPledger && !isClosed ? (
                     <div className="flex gap-2">
                       <button

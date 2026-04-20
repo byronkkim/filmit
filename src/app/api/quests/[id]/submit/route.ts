@@ -142,6 +142,17 @@ export async function POST(
     .update({ status: 'reviewing' })
     .eq('id', questId);
 
+  // 비동기로 Gemini AI 판정 트리거 (응답은 기다리지 않음)
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+  fetch(`${baseUrl}/api/videos/${video.id}/verify-ai`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+    },
+  }).catch(err => console.error('AI 검증 트리거 실패:', err));
+
   return NextResponse.json({
     video,
     message: '영상이 제출되었습니다. 검증이 진행됩니다.',

@@ -19,6 +19,7 @@ interface QuestDetailProps {
     video_url: string;
     status: string;
     ai_verification_score: number | null;
+    ai_verification_result: Record<string, unknown> | null;
     vote_deadline_at: string | null;
     created_at: string;
   } | null;
@@ -273,6 +274,8 @@ export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentC
             totalBackers={pledgeCount}
             isPledger={isPledger ?? false}
             subQuests={quest.sub_quests ?? []}
+            aiScore={video.ai_verification_score}
+            aiResult={video.ai_verification_result}
           />
         </div>
       )}

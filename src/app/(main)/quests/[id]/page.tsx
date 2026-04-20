@@ -79,7 +79,7 @@ export default async function QuestDetailPage({
   // 이미 제출된 영상이 있는지 확인
   const { data: video } = await supabase
     .from('videos')
-    .select('id, youtube_video_id, video_url, status, ai_verification_score, vote_deadline_at, created_at')
+    .select('id, youtube_video_id, video_url, status, ai_verification_score, ai_verification_result, vote_deadline_at, created_at')
     .eq('quest_id', id)
     .maybeSingle();
 
