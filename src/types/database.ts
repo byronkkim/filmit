@@ -120,6 +120,14 @@ export interface SubQuestVote {
   created_at: string;
 }
 
+export interface VideoVote {
+  id: string;
+  video_id: string;
+  user_id: string;
+  vote: boolean; // true = 주제에 맞음, false = 맞지 않음
+  created_at: string;
+}
+
 export interface Pledge {
   id: string;
   quest_id: string;
@@ -145,6 +153,9 @@ export interface Video {
   youtube_video_id: string | null;
   youtube_published_at: string | null;
   duration_seconds: number | null;
+  vote_yes: number;
+  vote_no: number;
+  vote_deadline_at: string | null;
   ai_verification_score: number | null;
   ai_verification_result: Record<string, unknown> | null;
   status: VideoStatus;

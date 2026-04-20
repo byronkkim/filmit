@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchVideoInfo, parseVideoUrl } from '@/lib/youtube';
+import { getVotingPeriodMs } from '@/lib/voting';
 
 /**
  * POST /api/quests/[id]/submit
@@ -44,7 +45,7 @@ export async function POST(
   // 퀘스트 조회
   const { data: quest, error: questError } = await supabase
     .from('quests')
-    .select('id, status, creator_id, accepted_at, deadline_at')
+    .select('id, status, creator_id, accepted_at, deadline_at, total_pledged_amount')
     .eq('id', questId)
     .single();
 
@@ -111,6 +112,10 @@ export async function POST(
     );
   }
 
+  // 투표 기간 설정 (총 후원액 기준 차등)
+  const votingPeriodMs = getVotingPeriodMs(quest.total_pledged_amount);
+  const voteDeadline = new Date(Date.now() + votingPeriodMs);
+
   // 영상 레코드 생성
   const { data: video, error: videoError } = await supabase
     .from('videos')
@@ -122,6 +127,7 @@ export async function POST(
       youtube_published_at: videoInfo.published_at,
       duration_seconds: videoInfo.duration_seconds,
       status: 'uploaded',
+      vote_deadline_at: voteDeadline.toISOString(),
     })
     .select()
     .single();

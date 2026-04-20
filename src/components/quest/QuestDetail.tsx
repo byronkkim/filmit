@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Quest, SubQuest, Creator } from '@/types/database';
 import { PledgeForm } from '@/components/payment/PledgeForm';
 import { VideoSubmit } from '@/components/quest/VideoSubmit';
+import { VoteSection } from '@/components/quest/VoteSection';
 
 interface QuestDetailProps {
   quest: Quest & {
@@ -18,6 +19,7 @@ interface QuestDetailProps {
     video_url: string;
     status: string;
     ai_verification_score: number | null;
+    vote_deadline_at: string | null;
     created_at: string;
   } | null;
   pledgeCount: number;
@@ -25,9 +27,10 @@ interface QuestDetailProps {
   currentCreatorId?: string | null;
   userInfo?: { id: string; email: string; name: string } | null;
   isCreator?: boolean;
+  isPledger?: boolean;
 }
 
-export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentCreatorId, userInfo, isCreator }: QuestDetailProps) {
+export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentCreatorId, userInfo, isCreator, isPledger }: QuestDetailProps) {
   const router = useRouter();
   const [showPledge, setShowPledge] = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -260,13 +263,17 @@ export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentC
         </div>
       )}
 
-      {/* 검증 중 상태 (다른 사람이 볼 때) */}
-      {quest.status === 'reviewing' && currentUserId &&
-       (!currentCreatorId || quest.creator?.id !== currentCreatorId) && (
-        <div className="rounded-xl bg-primary-soft p-4 text-center">
-          <p className="text-sm font-medium text-primary-text">
-            영상이 제출되어 검증이 진행 중입니다
-          </p>
+      {/* 검증 중 상태 — 투표 UI 표시 */}
+      {quest.status === 'reviewing' && video && (
+        <div className="mb-8">
+          <VoteSection
+            videoId={video.id}
+            videoUrl={video.video_url}
+            voteDeadlineAt={video.vote_deadline_at}
+            totalBackers={pledgeCount}
+            isPledger={isPledger ?? false}
+            subQuests={quest.sub_quests ?? []}
+          />
         </div>
       )}
 

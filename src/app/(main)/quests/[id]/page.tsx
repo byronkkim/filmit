@@ -79,9 +79,22 @@ export default async function QuestDetailPage({
   // 이미 제출된 영상이 있는지 확인
   const { data: video } = await supabase
     .from('videos')
-    .select('id, youtube_video_id, video_url, status, ai_verification_score, created_at')
+    .select('id, youtube_video_id, video_url, status, ai_verification_score, vote_deadline_at, created_at')
     .eq('quest_id', id)
     .maybeSingle();
+
+  // 현재 사용자가 후원자인지 (투표권 확인용)
+  let isPledger = false;
+  if (user) {
+    const { data: pledge } = await supabase
+      .from('pledges')
+      .select('id')
+      .eq('quest_id', id)
+      .eq('user_id', user.id)
+      .in('status', ['escrowed', 'pending'])
+      .maybeSingle();
+    isPledger = !!pledge;
+  }
 
   return (
     <QuestDetail
@@ -92,6 +105,7 @@ export default async function QuestDetailPage({
       currentCreatorId={currentCreatorId}
       userInfo={userInfo}
       isCreator={isCreator}
+      isPledger={isPledger}
     />
   );
 }
