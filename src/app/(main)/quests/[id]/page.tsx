@@ -32,7 +32,7 @@ export default async function QuestDetailPage({
     .from('quests')
     .select(`
       *,
-      sub_quests(id, description, is_main, amount, status),
+      sub_quests(id, description, is_main, status, star_votes_yes, star_votes_no),
       creator:creators(id, channel_name, subscriber_count, grade)
     `)
     .eq('id', id)
@@ -52,6 +52,8 @@ export default async function QuestDetailPage({
   // 사용자 정보 (후원 폼에 필요)
   let userInfo = null;
   let isCreator = false;
+  let currentCreatorId: string | null = null;
+
   if (user) {
     const { data: dbUser } = await supabase
       .from('users')
@@ -64,20 +66,30 @@ export default async function QuestDetailPage({
       name: dbUser?.display_name ?? '',
     };
 
-    // 크리에이터 여부 확인
+    // 크리에이터 여부 + ID 확인
     const { data: creator } = await supabase
       .from('creators')
       .select('id')
       .eq('user_id', user.id)
       .single();
     isCreator = !!creator;
+    currentCreatorId = creator?.id ?? null;
   }
+
+  // 이미 제출된 영상이 있는지 확인
+  const { data: video } = await supabase
+    .from('videos')
+    .select('id, youtube_video_id, video_url, status, ai_verification_score, created_at')
+    .eq('quest_id', id)
+    .maybeSingle();
 
   return (
     <QuestDetail
       quest={quest}
+      video={video}
       pledgeCount={pledgeCount ?? 0}
       currentUserId={user?.id ?? null}
+      currentCreatorId={currentCreatorId}
       userInfo={userInfo}
       isCreator={isCreator}
     />

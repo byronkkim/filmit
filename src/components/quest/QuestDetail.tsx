@@ -5,19 +5,29 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Quest, SubQuest, Creator } from '@/types/database';
 import { PledgeForm } from '@/components/payment/PledgeForm';
+import { VideoSubmit } from '@/components/quest/VideoSubmit';
 
 interface QuestDetailProps {
   quest: Quest & {
     sub_quests: SubQuest[];
     creator: Creator | null;
   };
+  video?: {
+    id: string;
+    youtube_video_id: string | null;
+    video_url: string;
+    status: string;
+    ai_verification_score: number | null;
+    created_at: string;
+  } | null;
   pledgeCount: number;
   currentUserId: string | null;
+  currentCreatorId?: string | null;
   userInfo?: { id: string; email: string; name: string } | null;
   isCreator?: boolean;
 }
 
-export function QuestDetail({ quest, pledgeCount, currentUserId, userInfo, isCreator }: QuestDetailProps) {
+export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentCreatorId, userInfo, isCreator }: QuestDetailProps) {
   const router = useRouter();
   const [showPledge, setShowPledge] = useState(false);
   const [accepting, setAccepting] = useState(false);
@@ -228,11 +238,34 @@ export function QuestDetail({ quest, pledgeCount, currentUserId, userInfo, isCre
         </>
       )}
 
-      {/* 진행 중인 퀘스트 — 현재 크리에이터 표시 */}
-      {quest.status === 'in_progress' && currentUserId && (
+      {/* 진행 중인 퀘스트 — 해당 크리에이터 본인이면 영상 제출 UI */}
+      {(quest.status === 'in_progress' || quest.status === 'reviewing') &&
+       currentCreatorId && quest.creator?.id === currentCreatorId && (
+        <div className="mb-8">
+          <VideoSubmit
+            questId={quest.id}
+            existingVideo={video}
+            deadlineAt={quest.deadline_at}
+          />
+        </div>
+      )}
+
+      {/* 진행 중이지만 다른 사람의 퀘스트 */}
+      {quest.status === 'in_progress' && currentUserId &&
+       (!currentCreatorId || quest.creator?.id !== currentCreatorId) && (
         <div className="rounded-xl bg-primary-soft p-4 text-center">
           <p className="text-sm font-medium text-primary-text">
             이 퀘스트는 현재 제작이 진행 중입니다
+          </p>
+        </div>
+      )}
+
+      {/* 검증 중 상태 (다른 사람이 볼 때) */}
+      {quest.status === 'reviewing' && currentUserId &&
+       (!currentCreatorId || quest.creator?.id !== currentCreatorId) && (
+        <div className="rounded-xl bg-primary-soft p-4 text-center">
+          <p className="text-sm font-medium text-primary-text">
+            영상이 제출되어 검증이 진행 중입니다
           </p>
         </div>
       )}
