@@ -47,11 +47,11 @@ export default async function Home() {
       {/* 히어로 */}
       <section className="mx-auto max-w-5xl px-6 py-20 text-center">
         <h1 className="mb-4 text-4xl font-bold leading-tight text-foreground sm:text-5xl">
-          보고 싶은 영상,<br />
-          <span className="text-primary">직접 요청</span>하세요
+          유튜버님!<br />
+          <span className="text-primary">이 영상 만들어 주세요</span> :)
         </h1>
         <p className="mx-auto mb-8 max-w-xl text-lg text-muted">
-          시청자가 원하는 영상 주제를 퀘스트로 등록하면,
+          시청자가 원하는 영상 주제를 퀘스트로 등록하면,<br />
           크리에이터가 제작하고 보상을 받는 영상 후원 플랫폼
         </p>
         <div className="flex items-center justify-center gap-4">
