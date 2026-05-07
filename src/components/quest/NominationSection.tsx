@@ -21,9 +21,13 @@ export function NominationSection({
 }: NominationSectionProps) {
   const [copied, setCopied] = useState(false);
 
+  // 보상금은 후원이 누적될수록 늘어나므로 "현재 N원"으로 표기 + 누적 가능 명시
   const commentTemplate = `${channelName}님!
-filmit에 "${questTitle}" 영상 요청이 등록됐어요. 보상 ${rewardAmount.toLocaleString()}원입니다.
-${questUrl}`;
+filmit에 "${questTitle}" 영상 요청이 등록됐어요 🎬
+현재 보상 ${rewardAmount.toLocaleString()}원이고, 후원이 늘어나면 보상도 함께 커져요.
+${questUrl}
+
+(이 댓글에 ❤️ 눌러서 같이 응원해주세요!)`;
 
   const handleCopy = async () => {
     try {

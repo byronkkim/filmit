@@ -234,6 +234,7 @@ export async function sendQuestNominationEmail(params: {
       <p style="margin: 0 0 12px;"><strong>${channelName}님께 영상 제작 요청이 들어왔어요 🎬</strong></p>
       <p style="margin: 0 0 12px;">시청자가 ${channelName}님을 지명해서 다음 퀘스트를 등록했어요:</p>
       <p style="margin: 0 0 16px; padding: 12px 16px; background: #f1f5f9; border-radius: 8px; font-weight: 600;">"${questTitle}"</p>
+      <p style="margin: 0 0 8px;">보상금은 시청자 후원이 누적될수록 함께 커져요. 영상 보러 가셔서 현재 모금액을 확인해보세요!</p>
       <p style="margin: 0; color: #64748b; font-size: 13px;">수락하시면 14일 안에 영상을 업로드해주시면 돼요. 거절하셔도 패널티는 없습니다.</p>
     `,
     '퀘스트 보러가기',
