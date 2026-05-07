@@ -93,6 +93,10 @@ export interface Quest {
   allowed_categories: string[] | null;
   allowed_channel_ids: string[] | null;
   is_competitive: boolean;
+  target_channel_id: string | null;
+  target_channel_name: string | null;
+  target_channel_thumbnail: string | null;
+  target_channel_url: string | null;
   deadline_at: string | null;
   accepted_at: string | null;
   completed_at: string | null;

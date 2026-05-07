@@ -21,7 +21,7 @@ export async function POST(
   // 크리에이터 프로필 확인
   const { data: creator } = await supabase
     .from('creators')
-    .select('id, suspended_until')
+    .select('id, channel_id, suspended_until')
     .eq('user_id', user.id)
     .single();
 
@@ -41,7 +41,7 @@ export async function POST(
   // 퀘스트 조회
   const { data: quest, error: questError } = await supabase
     .from('quests')
-    .select('id, status, creator_id, is_competitive')
+    .select('id, status, creator_id, is_competitive, target_channel_id')
     .eq('id', questId)
     .single();
 
@@ -55,6 +55,14 @@ export async function POST(
 
   if (quest.creator_id && !quest.is_competitive) {
     return NextResponse.json({ error: '이미 다른 크리에이터가 수락한 퀘스트입니다.' }, { status: 409 });
+  }
+
+  // 지명 퀘스트는 지명된 채널만 수락 가능
+  if (quest.target_channel_id && quest.target_channel_id !== creator.channel_id) {
+    return NextResponse.json(
+      { error: '이 퀘스트는 특정 크리에이터에게 지명된 퀘스트입니다.' },
+      { status: 403 }
+    );
   }
 
   // 데드라인: 수락 시점으로부터 14일 후

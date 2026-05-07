@@ -221,6 +221,27 @@ export async function sendQuestRefundedEmail(params: {
   return send({ to, subject: `[filmit] "${questTitle}" 환불 안내`, html });
 }
 
+export async function sendQuestNominationEmail(params: {
+  to: string;
+  channelName: string;
+  questTitle: string;
+  questId: string;
+}) {
+  const { to, channelName, questTitle, questId } = params;
+  const url = `${APP_URL}/quests/${questId}`;
+  const html = wrapTemplate(
+    `
+      <p style="margin: 0 0 12px;"><strong>${channelName}님께 영상 제작 요청이 들어왔어요 🎬</strong></p>
+      <p style="margin: 0 0 12px;">시청자가 ${channelName}님을 지명해서 다음 퀘스트를 등록했어요:</p>
+      <p style="margin: 0 0 16px; padding: 12px 16px; background: #f1f5f9; border-radius: 8px; font-weight: 600;">"${questTitle}"</p>
+      <p style="margin: 0; color: #64748b; font-size: 13px;">수락하시면 14일 안에 영상을 업로드해주시면 돼요. 거절하셔도 패널티는 없습니다.</p>
+    `,
+    '퀘스트 보러가기',
+    url,
+  );
+  return send({ to, subject: `[filmit] ${channelName}님께 영상 요청이 도착했어요!`, html });
+}
+
 export async function sendDeadlineReminderEmail(params: {
   to: string;
   questTitle: string;

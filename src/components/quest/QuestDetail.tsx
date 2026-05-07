@@ -7,6 +7,7 @@ import type { Quest, SubQuest, Creator } from '@/types/database';
 import { PledgeForm } from '@/components/payment/PledgeForm';
 import { VideoSubmit } from '@/components/quest/VideoSubmit';
 import { VoteSection } from '@/components/quest/VoteSection';
+import { NominationSection } from '@/components/quest/NominationSection';
 
 interface QuestDetailProps {
   quest: Quest & {
@@ -86,7 +87,7 @@ export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentC
 
       {/* 헤더 */}
       <div className="mb-8">
-        <div className="mb-3 flex items-center gap-3">
+        <div className="mb-3 flex items-center gap-3 flex-wrap">
           <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-text">
             {statusLabel[quest.status] ?? quest.status}
           </span>
@@ -95,11 +96,28 @@ export function QuestDetail({ quest, video, pledgeCount, currentUserId, currentC
               경쟁 방식
             </span>
           )}
+          {quest.target_channel_id && (
+            <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
+              💌 지명 퀘스트
+            </span>
+          )}
         </div>
 
         <h1 className="mb-2 text-2xl font-bold text-foreground">{quest.title}</h1>
         <p className="text-muted">{quest.description}</p>
       </div>
+
+      {/* 지명된 유튜버 정보 + 공유 도우미 */}
+      {quest.target_channel_id && quest.target_channel_name && (
+        <NominationSection
+          channelName={quest.target_channel_name}
+          channelThumbnail={quest.target_channel_thumbnail}
+          channelUrl={quest.target_channel_url}
+          questUrl={typeof window !== 'undefined' ? `${window.location.origin}/quests/${quest.id}` : `/quests/${quest.id}`}
+          questTitle={quest.title}
+          rewardAmount={quest.creator_reward_amount}
+        />
+      )}
 
       {/* 보상 정보 카드 */}
       <div className="mb-8 rounded-xl border border-border bg-muted-soft p-6">
