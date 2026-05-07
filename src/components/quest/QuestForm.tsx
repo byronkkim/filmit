@@ -190,9 +190,21 @@ export function QuestForm() {
         <label className="mb-1.5 block text-sm font-medium text-foreground">
           특정 유튜버 지명 <span className="text-xs text-muted">(선택)</span>
         </label>
-        <p className="mb-3 text-xs text-muted">
+        <p className="mb-2 text-xs text-muted">
           비워두면 누구나 도전 가능. 지명하면 해당 채널이 filmit 가입자면 자동 알림이 가요.
         </p>
+        <details className="mb-3 text-xs text-muted">
+          <summary className="cursor-pointer hover:text-foreground">📌 채널 URL 어디서 복사하나요?</summary>
+          <div className="mt-2 space-y-1.5 rounded-lg bg-muted-soft/50 p-3 leading-relaxed">
+            <p>아래 중 아무 형식이나 OK예요:</p>
+            <ul className="ml-4 list-disc space-y-0.5">
+              <li><code className="text-foreground">https://youtube.com/@채널핸들</code> ← 가장 권장</li>
+              <li><code className="text-foreground">https://youtube.com/channel/UCxxxxxx</code></li>
+              <li><code className="text-foreground">https://youtube.com/@채널핸들/about</code></li>
+            </ul>
+            <p className="pt-1.5">💡 <strong>가져오는 법</strong>: 유튜브 앱 또는 PC에서 그 채널의 홈 화면 들어가서, 주소창 URL을 복사하거나 모바일은 채널 → 공유 → 링크 복사하세요.</p>
+          </div>
+        </details>
 
         {!targetChannel ? (
           <>
