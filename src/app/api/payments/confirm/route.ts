@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { confirmPayment } from '@/lib/tosspayments';
+import { sendPledgeCompleteEmail } from '@/lib/email';
 
 // POST /api/payments/confirm — 결제 승인
 export async function POST(request: NextRequest) {
@@ -52,6 +53,21 @@ export async function POST(request: NextRequest) {
       quest_id_input: pledge.quest_id,
       amount_input: pledge.amount,
     });
+
+    // 5. 후원자에게 이메일 알림 (실패해도 결제는 성공)
+    const { data: questData } = await supabase
+      .from('quests')
+      .select('title')
+      .eq('id', pledge.quest_id)
+      .single();
+    if (user.email && questData) {
+      sendPledgeCompleteEmail({
+        to: user.email,
+        questTitle: questData.title,
+        questId: pledge.quest_id,
+        amount: pledge.amount,
+      }).catch(err => console.error('이메일 발송 실패:', err));
+    }
 
     return NextResponse.json({ success: true, payment });
   } catch (err) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchVideoInfo, parseVideoUrl } from '@/lib/youtube';
 import { getVotingPeriodMs } from '@/lib/voting';
+import { sendVideoSubmittedEmail } from '@/lib/email';
 
 /**
  * POST /api/quests/[id]/submit
@@ -152,6 +153,41 @@ export async function POST(
       'Authorization': `Bearer ${process.env.CRON_SECRET}`,
     },
   }).catch(err => console.error('AI 검증 트리거 실패:', err));
+
+  // 후원자들에게 투표 요청 알림
+  (async () => {
+    try {
+      const { data: pledgersData } = await supabase
+        .from('pledges')
+        .select('user:users(email)')
+        .eq('quest_id', questId)
+        .in('status', ['escrowed', 'pending']);
+
+      const { data: questForEmail } = await supabase
+        .from('quests')
+        .select('title')
+        .eq('id', questId)
+        .single();
+
+      type PledgerRow = { user: { email: string } | { email: string }[] | null };
+      const emails = Array.from(new Set(
+        ((pledgersData ?? []) as unknown as PledgerRow[])
+          .map(p => Array.isArray(p.user) ? p.user[0]?.email : p.user?.email)
+          .filter((e): e is string => !!e)
+      ));
+
+      await Promise.allSettled(emails.map(email =>
+        sendVideoSubmittedEmail({
+          to: email,
+          questTitle: questForEmail?.title ?? '퀘스트',
+          questId,
+          videoUrl: video_url,
+        })
+      ));
+    } catch (err) {
+      console.error('영상 제출 알림 실패:', err);
+    }
+  })();
 
   return NextResponse.json({
     video,

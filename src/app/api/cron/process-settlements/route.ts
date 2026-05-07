@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cancelPayment } from '@/lib/tosspayments';
 import { calculateWithholdingTax, calculateNetAmount } from '@/lib/tax';
+import {
+  sendQuestApprovedEmail,
+  sendQuestRejectedToCreatorEmail,
+  sendQuestRefundedEmail,
+} from '@/lib/email';
 
 /**
  * GET /api/cron/process-settlements
@@ -41,7 +46,7 @@ export async function GET(request: NextRequest) {
   // ============================================================
   const { data: completedQuests } = await supabase
     .from('quests')
-    .select('id, creator_id, completed_at')
+    .select('id, title, creator_id, completed_at')
     .eq('status', 'completed');
 
   if (completedQuests && completedQuests.length > 0) {
@@ -56,6 +61,10 @@ export async function GET(request: NextRequest) {
         .eq('status', 'escrowed');
 
       if (!pledges || pledges.length === 0) continue;
+
+      let questGrossSum = 0;
+      let questNetSum = 0;
+      let questTaxSum = 0;
 
       for (const pledge of pledges) {
         try {
@@ -97,11 +106,38 @@ export async function GET(request: NextRequest) {
             .update({ status: 'released' })
             .eq('id', pledge.id);
 
+          questGrossSum += grossAmount;
+          questTaxSum += withholdingTax;
+          questNetSum += netAmount;
+
           stats.settlements_created++;
         } catch (err) {
           stats.settlements_failed++;
           const msg = err instanceof Error ? err.message : String(err);
           stats.errors.push(`pledge ${pledge.id}: ${msg}`);
+        }
+      }
+
+      // 크리에이터에게 정산 확정 메일
+      if (questNetSum > 0) {
+        try {
+          const { data: creatorUser } = await supabase
+            .from('creators')
+            .select('user:users(email)')
+            .eq('id', quest.creator_id)
+            .single();
+          const email = (creatorUser as unknown as { user: { email: string } | null } | null)?.user?.email;
+          if (email) {
+            await sendQuestApprovedEmail({
+              to: email,
+              questTitle: quest.title,
+              questId: quest.id,
+              netAmount: questNetSum,
+              withholdingTax: questTaxSum,
+            });
+          }
+        } catch (err) {
+          console.error('크리에이터 정산 메일 실패:', err);
         }
       }
     }
@@ -112,18 +148,39 @@ export async function GET(request: NextRequest) {
   // ============================================================
   const { data: cancelledQuests } = await supabase
     .from('quests')
-    .select('id, title')
+    .select('id, title, creator_id')
     .eq('status', 'cancelled');
 
   if (cancelledQuests && cancelledQuests.length > 0) {
     for (const quest of cancelledQuests) {
       const { data: pledges } = await supabase
         .from('pledges')
-        .select('id, payment_key, total_paid, status')
+        .select('id, payment_key, total_paid, status, user:users(email)')
         .eq('quest_id', quest.id)
         .eq('status', 'escrowed');
 
       if (!pledges || pledges.length === 0) continue;
+
+      // 크리에이터에게 거부 안내 (한 번만)
+      if (quest.creator_id) {
+        try {
+          const { data: creatorUser } = await supabase
+            .from('creators')
+            .select('user:users(email)')
+            .eq('id', quest.creator_id)
+            .single();
+          const email = (creatorUser as unknown as { user: { email: string } | null } | null)?.user?.email;
+          if (email) {
+            await sendQuestRejectedToCreatorEmail({
+              to: email,
+              questTitle: quest.title,
+              questId: quest.id,
+            });
+          }
+        } catch (err) {
+          console.error('크리에이터 거부 알림 실패:', err);
+        }
+      }
 
       for (const pledge of pledges) {
         if (!pledge.payment_key) {
@@ -148,6 +205,20 @@ export async function GET(request: NextRequest) {
               refund_amount: pledge.total_paid,
             })
             .eq('id', pledge.id);
+
+          // 후원자에게 환불 안내
+          const pledgeWithUser = pledge as unknown as { user: { email: string } | null };
+          if (pledgeWithUser.user?.email) {
+            try {
+              await sendQuestRefundedEmail({
+                to: pledgeWithUser.user.email,
+                questTitle: quest.title,
+                amount: pledge.total_paid,
+              });
+            } catch (err) {
+              console.error('환불 알림 실패:', err);
+            }
+          }
 
           stats.refunds_processed++;
         } catch (err) {

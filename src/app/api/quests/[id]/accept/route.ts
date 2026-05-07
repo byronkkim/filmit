@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendCreatorAcceptedEmail } from '@/lib/email';
 
 /**
  * POST /api/quests/[id]/accept
@@ -77,6 +78,42 @@ export async function POST(
   if (updateError || !updated) {
     return NextResponse.json({ error: '퀘스트 수락에 실패했습니다. 다시 시도해주세요.' }, { status: 500 });
   }
+
+  // 후원자들에게 알림 메일 (실패해도 응답은 OK)
+  (async () => {
+    try {
+      const { data: pledgersData } = await supabase
+        .from('pledges')
+        .select('user:users(email)')
+        .eq('quest_id', questId)
+        .in('status', ['escrowed', 'pending']);
+
+      const { data: creatorData } = await supabase
+        .from('creators')
+        .select('channel_name')
+        .eq('id', creator.id)
+        .single();
+
+      type PledgerRow = { user: { email: string } | { email: string }[] | null };
+      const emails = Array.from(new Set(
+        ((pledgersData ?? []) as unknown as PledgerRow[])
+          .map(p => Array.isArray(p.user) ? p.user[0]?.email : p.user?.email)
+          .filter((e): e is string => !!e)
+      ));
+
+      const channelName = creatorData?.channel_name ?? '크리에이터';
+      await Promise.allSettled(emails.map(email =>
+        sendCreatorAcceptedEmail({
+          to: email,
+          questTitle: updated.title,
+          questId,
+          creatorName: channelName,
+        })
+      ));
+    } catch (err) {
+      console.error('수락 알림 실패:', err);
+    }
+  })();
 
   return NextResponse.json({ quest: updated });
 }
