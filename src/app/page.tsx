@@ -62,7 +62,7 @@ export default async function Home() {
               href="/quests/new"
               className="rounded-xl bg-primary px-8 py-3 text-sm font-medium text-white hover:bg-primary-hover"
             >
-              퀘스트 등록
+              영상 만들어주세요
             </Link>
           </div>
           <div className="flex flex-col items-center gap-1.5">
@@ -71,7 +71,7 @@ export default async function Home() {
               href="/creator"
               className="rounded-xl border border-border px-8 py-3 text-sm font-medium text-foreground hover:bg-muted-soft"
             >
-              퀘스트 수령
+              영상 만들어볼게요
             </Link>
           </div>
         </div>
@@ -80,12 +80,7 @@ export default async function Home() {
       {/* 퀘스트 리스트 */}
       <section className="border-t border-border bg-surface py-16">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">진행 중인 퀘스트</h2>
-            <Link href="/quests" className="text-sm font-medium text-primary-text hover:underline">
-              전체 보기 →
-            </Link>
-          </div>
+          <h2 className="mb-8 text-2xl font-bold text-foreground">진행 중인 퀘스트</h2>
 
           {quests && quests.length > 0 ? (
             <>

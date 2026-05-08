@@ -68,7 +68,7 @@ export function CreatorDashboard({ creator, openQuestCount }: CreatorDashboardPr
         >
           <p className="text-sm font-medium text-primary-text">도전 가능한 퀘스트</p>
           <p className="mt-1 text-3xl font-bold text-primary-text">{openQuestCount}개</p>
-          <p className="mt-2 text-xs text-muted">퀘스트 탐색하기 →</p>
+          <p className="mt-2 text-xs text-muted">퀘스트 찾기 →</p>
         </Link>
 
         <Link

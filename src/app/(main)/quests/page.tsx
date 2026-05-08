@@ -3,7 +3,7 @@ import { QuestCard } from '@/components/quest/QuestCard';
 import Link from 'next/link';
 
 export const metadata = {
-  title: '퀘스트 탐색 — filmit',
+  title: '퀘스트 찾기 — filmit',
 };
 
 export default async function QuestsPage({
@@ -19,7 +19,7 @@ export default async function QuestsPage({
 
   let query = supabase
     .from('quests')
-    .select('*, sub_quests(id, description, is_main, amount, status)', { count: 'exact' })
+    .select('*, sub_quests(id, description, is_main, status, star_votes_yes, star_votes_no)', { count: 'exact' })
     .eq('status', 'open')
     .eq('is_private', false)
     .order('created_at', { ascending: false })
@@ -36,7 +36,7 @@ export default async function QuestsPage({
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">퀘스트 탐색</h1>
+          <h1 className="text-2xl font-bold text-foreground">퀘스트 찾기</h1>
           <p className="mt-1 text-sm text-muted">
             원하는 영상을 요청하고 크리에이터를 후원하세요
           </p>
@@ -45,7 +45,7 @@ export default async function QuestsPage({
           href="/quests/new"
           className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover"
         >
-          퀘스트 등록
+          영상 만들어주세요
         </Link>
       </div>
 

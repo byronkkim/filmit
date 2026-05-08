@@ -46,7 +46,7 @@ export function CreatorQuests({ quests }: CreatorQuestsProps) {
           href="/quests"
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
         >
-          퀘스트 탐색
+          퀘스트 찾기
         </Link>
       </div>
 
@@ -84,7 +84,7 @@ export function CreatorQuests({ quests }: CreatorQuestsProps) {
             href="/quests"
             className="mt-4 inline-block text-sm font-medium text-primary-text hover:underline"
           >
-            퀘스트 탐색하러 가기 →
+            퀘스트 찾아보기 →
           </Link>
         </div>
       ) : (

@@ -31,7 +31,7 @@ export function Header() {
             href="/quests"
             className="text-sm font-medium text-muted hover:text-foreground"
           >
-            퀘스트 탐색
+            퀘스트 찾기
           </Link>
           {user ? (
             <>
@@ -39,7 +39,7 @@ export function Header() {
                 href="/quests/new"
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
               >
-                퀘스트 등록
+                영상 만들어주세요
               </Link>
               <button
                 onClick={handleLogout}
